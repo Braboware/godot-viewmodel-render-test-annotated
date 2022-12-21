@@ -29,14 +29,17 @@ void vertex() {
 	UV = UV * uv1_scale.xy + uv1_offset.xy;
 	
 	/* begin shader magic*/
-	float onetanfov = 1.0f / tan(0.5f * (viewmodel_fov * PI / 180.0f));
-	float aspect = VIEWPORT_SIZE.x / VIEWPORT_SIZE.y;
+	float onetanfov = 1.0f / tan(0.5f * (viewmodel_fov * PI / 180.0f)); // calculate components for projection matrix
+	float aspect = VIEWPORT_SIZE.x / VIEWPORT_SIZE.y;                   // calculate components for projection matrix
 	// modify projection matrix
-	PROJECTION_MATRIX[1][1] = onetanfov;
-	PROJECTION_MATRIX[0][0] = onetanfov / aspect;
+	PROJECTION_MATRIX[0][0] = onetanfov / aspect;  // insert into matrix to modify FOV; X scaling
+    PROJECTION_MATRIX[1][1] = onetanfov;           // insert into matrix to modify FOV; Y scaling
+    // ---------------------------------------------------------------------------------------------------------------------------
 	// draws the viewmodel over everything (disable if you want dof near on viewmodel)
-	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX.xyz, 1.0);
-	POSITION.z = mix(POSITION.z, 0, 0.999);
+	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX.xyz, 1.0); // recalculate position, multiplying by matrices; multiply right to left, even the vec4 (because column major vectors, not row major)
+    // Clip Space POSIITON vec4 (output) <- View to Clip Space <- Model to View Space <- Model Space VERTEX vec4 (input)
+	POSITION.z = mix(POSITION.z, 0, 0.999); // modify z value to draw on top of everything; values >.9999 causes z-fighting(?) artifacts, .999 is a safe value
+                                            // effectively smushes everything down on the depth-axis 0.001 thick up against the camera without messing with the perspective thanks to the previous line of code
 	/* end shader magic */
 }
 
